@@ -92,6 +92,9 @@ cd KukaPy
 pip install -e .
 ```
 
+## Recommend to run in Administrator Mode
+<img width="798" height="798" alt="126712805f4629695c003a0111d27da1" src="https://github.com/user-attachments/assets/dd0fa57f-5169-425b-bd77-1a5ae6392d0e" />
+
 ---
 
 ## Deploying to the KRC
