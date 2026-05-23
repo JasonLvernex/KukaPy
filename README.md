@@ -1,82 +1,201 @@
-# kukapy
+# KukaPy
 
-A Python package for controlling KUKA robots by interfacing with the KUKA Controller.
+A Python library for controlling KUKA robots over TCP via KUKA's EthernetKRL (EKI) interface — inspired by [fanucpy](https://github.com/torayeff/fanucpy).
 
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Python Version](https://img.shields.io/badge/Python-3.x-blue.svg)](https://www.python.org/downloads/)
+[![Python Version](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/downloads/)
+
+---
 
 ## Overview
 
-**kukapy** provides a robust Python API for controlling KUKA robots. It interfaces with the KUKA Controller via the `kukadriver` module and offers functionalities for calibration, motion control, and transformation handling.
+KukaPy lets you send motion commands, read joint/Cartesian positions, and control digital outputs from a Python script running on a PC. Communication uses KUKA EthernetKRL (EKI) over TCP.
 
-## Table of Contents
+**Who is server / who is client:**
 
-- [Project Structure](#project-structure)
-- [Installation](#installation)
-- [Deploying to KUKA Controller](#deploying-to-kuka-controller)
-- [Usage](#usage)
-- [Contributing](#contributing)
-- [License](#license)
-- [Contact](#contact)
+| Role | Side |
+|---|---|
+| **TCP Server** | Python (your PC) — listens on a port |
+| **TCP Client** | KRC (KUKA Robot Controller) — connects out to Python |
+
+The KRL program `KUKAPY_SERVER.SRC` runs on the pendant and initiates the connection. Your Python script calls `robot.connect()` to listen and wait for the KRC to connect in.
+
+---
 
 ## Project Structure
 
-### kukadriver (KRL Scripts for the KUKA Robot Controller)
-- **`mappdk_kuka_cmd.src`** – Handles robot commands.
-- **`mappdk_kuka_comm.src`** – Manages communication between the robot and the external system.
-- **`mappdk_kuka_logger.src`** – Logs system and command activities.
-- **`mappdk_kuka_server.src`** – Main interface server for the robot.
-- **`mappdk_kuka_utils.src`** – Provides utility functions for robot operations.
+```
+kukapy/           Python library
+  robot.py        Robot class — connect, move, read positions, digital I/O
+  robotapp.py     High-level application helpers
+  transformations.py  Rotation utilities (quaternion, Euler)
 
-### kukapy (Python API for KUKA Robot Interaction)
-- **`calibration.py`** – Handles robot calibration.
-- **`robot.py`** – Core module for robot control.
-- **`robotapp.py`** – Application-level control logic.
-- **`transformations.py`** – Utilities for handling transformations (e.g., quaternions, Euler angles).
+kukadriver/       Files to deploy on the KRC
+  KUKAPY_SERVER.SRC   KRL server program (run this on the pendant)
+  KUKAPY.xml          EKI channel configuration
+
+kuka_example/
+  test_ping.py        Minimal ping/pong connectivity test
+  connection_test.py  Motion test — joint moves + Cartesian LIN move
+```
+
+---
+
+## Requirements
+
+- Python 3.8+
+- KUKA KRC with KSS 8.x and EthernetKRL (EKI) option
+- Network connectivity between PC and KRC
+
+---
 
 ## Installation
 
-1. **Ensure Python 3.x is installed.**
-2. **Clone the repository:**
-   ```bash
-   git clone https://github.com/your-username/kukapy.git
-   cd kukapy
-Install dependencies:
-bash
-Copy
-pip install -r requirements.txt
-Deploying to KUKA Controller
-Transfer the .src files:
-Copy the files from the kukadriver directory onto the KUKA controller.
-Configure network communication:
-Set the appropriate IP addresses.
-Verify connectivity between the controller and your computer.
-Start the KUKA programs:
-Run the necessary scripts (e.g., mappdk_kuka_server.src) on the robot to enable command execution.
-Usage
-Below is a quick example to get started:
+```bash
+git clone https://github.com/JasonLvernex/KukaPy.git
+cd KukaPy
+pip install -e .
+```
 
-python
-Copy
+No additional dependencies beyond the Python standard library.
+
+---
+
+## Deploying to the KRC
+
+### 1. Copy KRL files
+
+Copy both files from `kukadriver/` to the KRC at:
+
+```
+C:\KRC\ROBOTER\Config\User\Common\EthernetKRL\KUKAPY.xml
+C:\KRC\ROBOTER\STEU\Mada\KUKAPY_SERVER.SRC   (or via teach pendant file manager)
+```
+
+### 2. Configure KUKAPY.xml
+
+Open `KUKAPY.xml` and set `<IP>` to the **PC's IP address** as seen from the KRC network:
+
+```xml
+<EXTERNAL>
+  <IP>192.168.0.1</IP>   <!-- PC IP reachable from KRC -->
+  <PORT>18735</PORT>
+  <PROTOCOL>TCP</PROTOCOL>
+  <SENDFLAG>1</SENDFLAG>
+</EXTERNAL>
+```
+
+**Cold-restart the KRC** after changing the XML so EKI reloads the configuration.
+
+### 3. EKI configuration notes (important for simulation)
+
+The following settings are required for correct operation — deviating from them causes `KSS01422` / `EKI000015` errors:
+
+- **`Set_Flag="1"` must be on the last RECEIVE element** (`Rob/DO_Val`), not the first.  
+  EKI sets `$FLAG[1]` as soon as the flagged element is parsed. If this is the first element, subsequent elements have not yet entered the buffer and all `EKI_GetInt` / `EKI_GetReal` calls fail with "empty receive buffer".
+
+- **All KRL variables must be explicitly initialised before `EKI_Get*` calls.**  
+  KRL marks locally declared variables as invalid until assigned. `EKI_GetInt` refuses to write into an invalid variable. `KUKAPY_SERVER.SRC` initialises all `cmd_*` variables to `0` / `0.0` after `EKI_OPEN`.
+
+- **`SENDFLAG=1`** causes the KRC to append `\x00` to every `EKI_SEND` frame. The Python client handles both null-byte delimited and plain XML frames automatically.
+
+### 4. Network setup for KUKA Sim Pro + VMware
+
+If running KRC inside a VMware VM (e.g. OfficeLite):
+
+- KRC's VxWorks real-time OS only routes `192.168.0.0/24`.
+- Python runs on the Windows host, typically on a `192.168.253.x` VMware NAT interface.
+- Bridge the two with a **portproxy** rule run as Administrator on the host:
+
+```powershell
+netsh portproxy add v4tov4 `
+  listenaddress=192.168.0.1 listenport=18735 `
+  connectaddress=192.168.253.1 connectport=18735
+```
+
+Also open the port in Windows Firewall:
+
+```powershell
+netsh advfirewall firewall add rule `
+  name="KukaPy EKI" dir=in action=allow protocol=TCP localport=18735
+```
+
+Run `KUKAPY_SERVER.SRC` on the pendant **after** Python is listening.
+
+---
+
+## Quick Start
+
+```python
 from kukapy.robot import Robot
 
-# Initialize the robot connection
-robot = Robot(ip="192.168.1.100", port=12345)
+robot = Robot(port=18735)
+robot.connect()          # blocks until KRC connects in
 
-# Move the robot to a specified position (XYZ coordinates + Quaternion)
-robot.move_to([500, 0, 300], [0, 1, 0, 0])
+print(robot.ping())                          # → 'pong'
+print(robot.get_curjpos())                   # [A1, A2, A3, A4, A5, A6] in degrees
+print(robot.get_curpos())                    # [X, Y, Z, A, B, C] in mm / degrees
 
-# Retrieve the current position
-pos = robot.get_position()
-print("Current Position:", pos)
+robot.move("joint", [0, -90, 90, 0, 90, 0], velocity=20)   # PTP joint move
+robot.move("pose",  [500, 0, 800, 0, 0, 0], velocity=10, linear=True)  # LIN move
 
-# Disconnect from the robot
+robot.set_do(1, True)                        # set digital output 1 high
+print(robot.get_do(1))                       # read digital output 1
+
 robot.disconnect()
-Contributing
-Contributions are welcome! If you have suggestions, improvements, or bug fixes, please open an issue or submit a pull request. For larger changes, consider discussing your ideas first by opening an issue.
+```
 
-License
-This project is licensed under the MIT License.
+### Robot class reference
 
-Contact
-For any inquiries, please open an issue on this repository or contact the maintainers directly.
+| Method | Description |
+|---|---|
+| `connect()` | Listen on `port` and wait for KRC to connect |
+| `disconnect()` | Send quit command and close socket |
+| `ping()` | Round-trip check, returns `'pong'` |
+| `get_curjpos()` | Current joint angles `[A1..A6]` in degrees |
+| `get_curpos()` | Current TCP position `[X, Y, Z, A, B, C]` in mm / degrees |
+| `move(move_type, vals, velocity, ...)` | Move robot (see below) |
+| `set_do(num, value)` | Set digital output |
+| `get_do(num)` | Read digital output state |
+| `print_pos()` | Print joint and Cartesian position to stdout |
+
+**`move()` parameters:**
+
+| Parameter | Description |
+|---|---|
+| `move_type` | `"joint"` / `"movej"` — PTP joint move; `"pose"` / `"movep"` — Cartesian move |
+| `vals` | 6-element list: `[A1..A6]` deg for joint, `[X,Y,Z,A,B,C]` mm/deg for Cartesian |
+| `velocity` | Program override 1–100 % |
+| `cnt_val` | Approximate positioning 0–100 % (0 = stop exactly) |
+| `linear` | `True` = LIN move, `False` = PTP (Cartesian mode only) |
+
+### Constructor options
+
+```python
+Robot(
+    port=18735,
+    socket_timeout=60,   # seconds to wait for KRC to connect
+    recv_timeout=None,   # seconds to wait for command response (None = infinite)
+)
+```
+
+Use `recv_timeout=300` (or similar) if long motion commands risk being cut off.
+
+---
+
+## Running the examples
+
+```bash
+# 1. Start KUKAPY_SERVER on the pendant
+# 2. Run the ping test
+python kuka_example/test_ping.py
+
+# 3. Run the motion test (joint moves + Cartesian LIN)
+python kuka_example/connection_test.py
+```
+
+---
+
+## License
+
+MIT License — see [LICENSE](LICENSE).
