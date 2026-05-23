@@ -1,0 +1,23 @@
+DEF EKIMIN( )
+
+  DECL EKI_STATUS eki_ret
+  DECL INT cmd_type
+
+  eki_ret = EKI_INIT("EKIMIN")
+  eki_ret = EKI_OPEN("EKIMIN")
+
+  ; Give operator 30 s to start Python and let it send the frame
+  WAIT SEC 30
+
+  ; Sentinel: if GetInt fails or buffer empty, val stays -1
+  cmd_type = -1
+  eki_ret = EKI_GetInt("EKIMIN", "Rob/Type", cmd_type)
+
+  eki_ret = EKI_SetInt("EKIMIN", "Res/Code", 0)
+  eki_ret = EKI_SetInt("EKIMIN", "Res/Val",  cmd_type)
+  eki_ret = EKI_SEND("EKIMIN", "Res")
+
+  eki_ret = EKI_CLOSE("EKIMIN")
+  eki_ret = EKI_CLEAR("EKIMIN")
+
+END

@@ -1,0 +1,17 @@
+DEF EKITEST()
+
+   DECL EKI_STATUS ret
+
+   ret = EKI_INIT("EKITEST")
+
+   HALT
+
+   ret = EKI_OPEN("EKITEST")
+
+   HALT
+
+   ret = EKI_CLOSE("EKITEST")
+
+   ret = EKI_CLEAR("EKITEST")
+
+END

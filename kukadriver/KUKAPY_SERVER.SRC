@@ -1,0 +1,194 @@
+DEF KUKAPY_SERVER( )
+
+  DECL EKI_STATUS eki_ret
+  DECL INT resp_code
+  DECL CHAR resp_msg[100]
+  DECL INT cmd_code
+  DECL INT cmd_vel
+  DECL INT cmd_acc
+  DECL INT cmd_cnt
+  DECL INT cmd_lin
+  DECL REAL cmd_a1
+  DECL REAL cmd_a2
+  DECL REAL cmd_a3
+  DECL REAL cmd_a4
+  DECL REAL cmd_a5
+  DECL REAL cmd_a6
+  DECL REAL cmd_x
+  DECL REAL cmd_y
+  DECL REAL cmd_z
+  DECL REAL cmd_oa
+  DECL REAL cmd_ob
+  DECL REAL cmd_oc
+  DECL INT cmd_do_num
+  DECL INT cmd_do_val
+  DECL AXIS target_jpos
+  DECL POS target_pos
+
+  BAS(#INITMOV, 0)
+
+  eki_ret = EKI_INIT("KUKAPY")
+  eki_ret = EKI_OPEN("KUKAPY")
+
+  cmd_code   = 0
+  cmd_vel    = 0
+  cmd_acc    = 0
+  cmd_cnt    = 0
+  cmd_lin    = 0
+  cmd_a1     = 0.0
+  cmd_a2     = 0.0
+  cmd_a3     = 0.0
+  cmd_a4     = 0.0
+  cmd_a5     = 0.0
+  cmd_a6     = 0.0
+  cmd_x      = 0.0
+  cmd_y      = 0.0
+  cmd_z      = 0.0
+  cmd_oa     = 0.0
+  cmd_ob     = 0.0
+  cmd_oc     = 0.0
+  cmd_do_num = 0
+  cmd_do_val = 0
+
+  $FLAG[1] = FALSE
+
+  LOOP
+
+    WAIT FOR $FLAG[1]
+    $FLAG[1] = FALSE
+
+    
+    eki_ret = EKI_GetInt("KUKAPY", "Rob/Type", cmd_code)
+
+    eki_ret = EKI_GetInt("KUKAPY", "Rob/Vel",    cmd_vel)
+    eki_ret = EKI_GetInt("KUKAPY", "Rob/Acc",    cmd_acc)
+    eki_ret = EKI_GetInt("KUKAPY", "Rob/Cnt",    cmd_cnt)
+    eki_ret = EKI_GetInt("KUKAPY", "Rob/Lin",    cmd_lin)
+    eki_ret = EKI_GetReal("KUKAPY", "Rob/A1",    cmd_a1)
+    eki_ret = EKI_GetReal("KUKAPY", "Rob/A2",    cmd_a2)
+    eki_ret = EKI_GetReal("KUKAPY", "Rob/A3",    cmd_a3)
+    eki_ret = EKI_GetReal("KUKAPY", "Rob/A4",    cmd_a4)
+    eki_ret = EKI_GetReal("KUKAPY", "Rob/A5",    cmd_a5)
+    eki_ret = EKI_GetReal("KUKAPY", "Rob/A6",    cmd_a6)
+    eki_ret = EKI_GetReal("KUKAPY", "Rob/X",     cmd_x)
+    eki_ret = EKI_GetReal("KUKAPY", "Rob/Y",     cmd_y)
+    eki_ret = EKI_GetReal("KUKAPY", "Rob/Z",     cmd_z)
+    eki_ret = EKI_GetReal("KUKAPY", "Rob/OA",    cmd_oa)
+    eki_ret = EKI_GetReal("KUKAPY", "Rob/OB",    cmd_ob)
+    eki_ret = EKI_GetReal("KUKAPY", "Rob/OC",    cmd_oc)
+    eki_ret = EKI_GetInt("KUKAPY", "Rob/DO_Num", cmd_do_num)
+    eki_ret = EKI_GetInt("KUKAPY", "Rob/DO_Val", cmd_do_val)
+
+    resp_code  = 0
+    resp_msg[] = "OK"
+
+    eki_ret = EKI_SetReal("KUKAPY", "Res/A1",     0.0)
+    eki_ret = EKI_SetReal("KUKAPY", "Res/A2",     0.0)
+    eki_ret = EKI_SetReal("KUKAPY", "Res/A3",     0.0)
+    eki_ret = EKI_SetReal("KUKAPY", "Res/A4",     0.0)
+    eki_ret = EKI_SetReal("KUKAPY", "Res/A5",     0.0)
+    eki_ret = EKI_SetReal("KUKAPY", "Res/A6",     0.0)
+    eki_ret = EKI_SetReal("KUKAPY", "Res/X",      0.0)
+    eki_ret = EKI_SetReal("KUKAPY", "Res/Y",      0.0)
+    eki_ret = EKI_SetReal("KUKAPY", "Res/Z",      0.0)
+    eki_ret = EKI_SetReal("KUKAPY", "Res/OA",     0.0)
+    eki_ret = EKI_SetReal("KUKAPY", "Res/OB",     0.0)
+    eki_ret = EKI_SetReal("KUKAPY", "Res/OC",     0.0)
+    eki_ret = EKI_SetInt("KUKAPY", "Res/DO_Val",  0)
+
+    SWITCH cmd_code
+    CASE 1
+      resp_msg[] = "pong"
+
+    CASE 2
+      eki_ret = EKI_SetReal("KUKAPY", "Res/A1", $AXIS_ACT.A1)
+      eki_ret = EKI_SetReal("KUKAPY", "Res/A2", $AXIS_ACT.A2)
+      eki_ret = EKI_SetReal("KUKAPY", "Res/A3", $AXIS_ACT.A3)
+      eki_ret = EKI_SetReal("KUKAPY", "Res/A4", $AXIS_ACT.A4)
+      eki_ret = EKI_SetReal("KUKAPY", "Res/A5", $AXIS_ACT.A5)
+      eki_ret = EKI_SetReal("KUKAPY", "Res/A6", $AXIS_ACT.A6)
+
+    CASE 3
+      eki_ret = EKI_SetReal("KUKAPY", "Res/X",  $POS_ACT.X)
+      eki_ret = EKI_SetReal("KUKAPY", "Res/Y",  $POS_ACT.Y)
+      eki_ret = EKI_SetReal("KUKAPY", "Res/Z",  $POS_ACT.Z)
+      eki_ret = EKI_SetReal("KUKAPY", "Res/OA", $POS_ACT.A)
+      eki_ret = EKI_SetReal("KUKAPY", "Res/OB", $POS_ACT.B)
+      eki_ret = EKI_SetReal("KUKAPY", "Res/OC", $POS_ACT.C)
+
+    CASE 4
+      $OV_PRO = cmd_vel
+      target_jpos.A1 = cmd_a1
+      target_jpos.A2 = cmd_a2
+      target_jpos.A3 = cmd_a3
+      target_jpos.A4 = cmd_a4
+      target_jpos.A5 = cmd_a5
+      target_jpos.A6 = cmd_a6
+      IF cmd_cnt > 0 THEN
+        $APO.CPTP = cmd_cnt
+        PTP target_jpos C_PTP
+      ELSE
+        PTP target_jpos
+      ENDIF
+
+    CASE 5
+      $OV_PRO = cmd_vel
+      target_pos = $POS_ACT
+      target_pos.X = cmd_x
+      target_pos.Y = cmd_y
+      target_pos.Z = cmd_z
+      target_pos.A = cmd_oa
+      target_pos.B = cmd_ob
+      target_pos.C = cmd_oc
+
+      IF cmd_lin == 1 THEN
+        IF cmd_cnt > 0 THEN
+          $APO.CDIS = cmd_cnt
+          LIN target_pos C_DIS
+        ELSE
+          LIN target_pos
+        ENDIF
+      ELSE
+        IF cmd_cnt > 0 THEN
+          $APO.CPTP = cmd_cnt
+          PTP target_pos C_PTP
+        ELSE
+          PTP target_pos
+        ENDIF
+      ENDIF
+
+    CASE 6
+      IF cmd_do_val == 1 THEN
+        $OUT[cmd_do_num] = TRUE
+      ELSE
+        $OUT[cmd_do_num] = FALSE
+      ENDIF
+
+    CASE 7
+      IF $OUT[cmd_do_num] THEN
+        eki_ret = EKI_SetInt("KUKAPY", "Res/DO_Val", 1)
+      ELSE
+        eki_ret = EKI_SetInt("KUKAPY", "Res/DO_Val", 0)
+      ENDIF
+
+    CASE 8
+      resp_msg[] = "Bye"
+
+    DEFAULT
+      resp_code  = 1
+      resp_msg[] = "UnknownCmd"
+    ENDSWITCH
+
+    eki_ret = EKI_SetInt("KUKAPY", "Res/Code", resp_code)
+    eki_ret = EKI_SEND("KUKAPY", "Res")
+
+    IF cmd_code == 8 THEN
+      EXIT
+    ENDIF
+
+  ENDLOOP
+
+  eki_ret = EKI_CLOSE("KUKAPY")
+  eki_ret = EKI_CLEAR("KUKAPY")
+
+END

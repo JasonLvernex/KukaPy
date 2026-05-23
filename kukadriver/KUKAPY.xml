@@ -1,0 +1,57 @@
+<ETHERNETKRL>
+  <CONFIGURATION>
+    <EXTERNAL>
+      <IP>192.168.0.1</IP>
+      <PORT>18735</PORT>
+      <PROTOCOL>TCP</PROTOCOL>
+      <SENDFLAG>1</SENDFLAG>
+    </EXTERNAL>
+    <INTERNAL>
+      <ALIVE ElementName="AliveCounter" />
+    </INTERNAL>
+  </CONFIGURATION>
+
+  <RECEIVE>
+    <XML>
+      <ELEMENT Tag="Rob/Type"   Type="INT" />
+      <ELEMENT Tag="Rob/Vel"    Type="INT" />
+      <ELEMENT Tag="Rob/Acc"    Type="INT" />
+      <ELEMENT Tag="Rob/Cnt"    Type="INT" />
+      <ELEMENT Tag="Rob/Lin"    Type="INT" />
+      <ELEMENT Tag="Rob/A1"     Type="REAL" />
+      <ELEMENT Tag="Rob/A2"     Type="REAL" />
+      <ELEMENT Tag="Rob/A3"     Type="REAL" />
+      <ELEMENT Tag="Rob/A4"     Type="REAL" />
+      <ELEMENT Tag="Rob/A5"     Type="REAL" />
+      <ELEMENT Tag="Rob/A6"     Type="REAL" />
+      <ELEMENT Tag="Rob/X"      Type="REAL" />
+      <ELEMENT Tag="Rob/Y"      Type="REAL" />
+      <ELEMENT Tag="Rob/Z"      Type="REAL" />
+      <ELEMENT Tag="Rob/OA"     Type="REAL" />
+      <ELEMENT Tag="Rob/OB"     Type="REAL" />
+      <ELEMENT Tag="Rob/OC"     Type="REAL" />
+      <ELEMENT Tag="Rob/DO_Num" Type="INT" />
+      <ELEMENT Tag="Rob/DO_Val" Type="INT" Set_Flag="1" />
+    </XML>
+  </RECEIVE>
+
+  <SEND>
+    <XML>
+      <ELEMENT Tag="Res/Code"   Type="INT" />
+      <ELEMENT Tag="Res/Msg"    Type="STRING" />
+      <ELEMENT Tag="Res/X"      Type="REAL" />
+      <ELEMENT Tag="Res/Y"      Type="REAL" />
+      <ELEMENT Tag="Res/Z"      Type="REAL" />
+      <ELEMENT Tag="Res/OA"     Type="REAL" />
+      <ELEMENT Tag="Res/OB"     Type="REAL" />
+      <ELEMENT Tag="Res/OC"     Type="REAL" />
+      <ELEMENT Tag="Res/A1"     Type="REAL" />
+      <ELEMENT Tag="Res/A2"     Type="REAL" />
+      <ELEMENT Tag="Res/A3"     Type="REAL" />
+      <ELEMENT Tag="Res/A4"     Type="REAL" />
+      <ELEMENT Tag="Res/A5"     Type="REAL" />
+      <ELEMENT Tag="Res/A6"     Type="REAL" />
+      <ELEMENT Tag="Res/DO_Val" Type="INT" />
+    </XML>
+  </SEND>
+</ETHERNETKRL>
