@@ -14,24 +14,13 @@ KukaPy lets you send motion commands, read joint/Cartesian positions, and contro
 ### Control flow
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  PC (Python)                    KRC (KUKA Robot Controller)     │
-│                                                                 │
-│  robot.connect()  ←──── TCP connection initiated by KRC ──────  │
-│                                                                 │
-│  robot.move(...)                                                │
-│    │  build XML cmd                                             │
-│    │  <Rob><Type>4</Type><Vel>20</Vel>...<DO_Val>0</DO_Val></Rob>│
-│    └──────────────── TCP send ──────────────────────────────►  │
-│                                         EKI receives XML        │
-│                                         $FLAG[1] set            │
-│                                         KRL reads all fields    │
-│                                         PTP / LIN executed      │
-│                                         EKI_SEND response       │
-│    ◄──────────────── TCP recv ──────────────────────────────    │
-│    <Res><Code>0</Code>...</Res>                                 │
-│    robot.move() returns                                         │
-└─────────────────────────────────────────────────────────────────┘
+  PC (Python)                          KRC (Robot Controller)
+  ─────────────────────────────────────────────────────────────
+  robot.connect()   ◄─── TCP connect ──── EKI_OPEN("KUKAPY")
+
+  robot.move(...)   ────── XML cmd ─────► EKI receives frame
+                                          KRL executes motion
+  move() returns    ◄───── XML resp ───── EKI_SEND response
 ```
 
 **Key point — who is server / who is client:**
@@ -81,7 +70,7 @@ kuka_example/
 
 ## Requirements
 
-- Python 3.8+
+- Python 3.8+ (no third-party dependencies — standard library only)
 - KUKA KRC with KSS 8.x and EthernetKRL (EKI) option
 - Network connectivity between PC and KRC
 
@@ -89,13 +78,19 @@ kuka_example/
 
 ## Installation
 
+**Install directly from GitHub (no cloning needed):**
+
+```bash
+pip install git+https://github.com/JasonLvernex/KukaPy.git
+```
+
+**Or clone and install in editable mode (for development):**
+
 ```bash
 git clone https://github.com/JasonLvernex/KukaPy.git
 cd KukaPy
 pip install -e .
 ```
-
-No additional dependencies beyond the Python standard library.
 
 ---
 
