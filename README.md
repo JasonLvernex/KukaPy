@@ -11,14 +11,52 @@ A Python library for controlling KUKA robots over TCP via KUKA's EthernetKRL (EK
 
 KukaPy lets you send motion commands, read joint/Cartesian positions, and control digital outputs from a Python script running on a PC. Communication uses KUKA EthernetKRL (EKI) over TCP.
 
-**Who is server / who is client:**
+### Control flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  PC (Python)                    KRC (KUKA Robot Controller)     │
+│                                                                 │
+│  robot.connect()  ←──── TCP connection initiated by KRC ──────  │
+│                                                                 │
+│  robot.move(...)                                                │
+│    │  build XML cmd                                             │
+│    │  <Rob><Type>4</Type><Vel>20</Vel>...<DO_Val>0</DO_Val></Rob>│
+│    └──────────────── TCP send ──────────────────────────────►  │
+│                                         EKI receives XML        │
+│                                         $FLAG[1] set            │
+│                                         KRL reads all fields    │
+│                                         PTP / LIN executed      │
+│                                         EKI_SEND response       │
+│    ◄──────────────── TCP recv ──────────────────────────────    │
+│    <Res><Code>0</Code>...</Res>                                 │
+│    robot.move() returns                                         │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Key point — who is server / who is client:**
 
 | Role | Side |
 |---|---|
-| **TCP Server** | Python (your PC) — listens on a port |
-| **TCP Client** | KRC (KUKA Robot Controller) — connects out to Python |
+| **TCP Server** | Python (your PC) — listens on a port, waits for KRC to connect |
+| **TCP Client** | KRC — EKI initiates the outbound connection to Python |
 
-The KRL program `KUKAPY_SERVER.SRC` runs on the pendant and initiates the connection. Your Python script calls `robot.connect()` to listen and wait for the KRC to connect in.
+This means Python must call `robot.connect()` **before** starting `KUKAPY_SERVER` on the pendant. The KRC connects out to the PC; the PC never connects to the KRC.
+
+### Command set
+
+Each Python call maps to a command code sent in the `<Type>` field:
+
+| Code | Python method | KRL action |
+|---|---|---|
+| 1 | `ping()` | responds `pong` |
+| 2 | `get_curjpos()` | reads `$AXIS_ACT` → returns A1–A6 |
+| 3 | `get_curpos()` | reads `$POS_ACT` → returns X,Y,Z,A,B,C |
+| 4 | `move("joint", ...)` | PTP to joint target |
+| 5 | `move("pose", ...)` | PTP or LIN to Cartesian target |
+| 6 | `set_do(n, v)` | sets `$OUT[n]` |
+| 7 | `get_do(n)` | reads `$OUT[n]` |
+| 8 | `disconnect()` | KRL exits loop, closes EKI channel |
 
 ---
 
@@ -65,12 +103,19 @@ No additional dependencies beyond the Python standard library.
 
 ### 1. Copy KRL files
 
-Copy both files from `kukadriver/` to the KRC at:
+Two files need to go to different locations on the KRC filesystem:
+
+**`KUKAPY.xml` — EKI channel configuration**
 
 ```
 C:\KRC\ROBOTER\Config\User\Common\EthernetKRL\KUKAPY.xml
-C:\KRC\ROBOTER\STEU\Mada\KUKAPY_SERVER.SRC   (or via teach pendant file manager)
 ```
+
+EKI reads this file at `EKI_INIT("KUKAPY")` time. The filename (without extension) must match the string passed to `EKI_INIT` / `EKI_OPEN` in the KRL program.
+
+**`KUKAPY_SERVER.SRC` — KRL server program**
+
+Copy via USB stick or network share to the KRC program directory, then select and load it from the teach pendant. In KUKA Sim Pro you can drag-and-drop into the project tree.
 
 ### 2. Configure KUKAPY.xml
 
