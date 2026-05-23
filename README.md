@@ -181,6 +181,8 @@ Ethernet adapter VMware Network Adapter VMnet8:
 **Step 2 — Find the KRC's IP inside the VM**
 
 Inside the VM, check the KRC network config. In OfficeLite it is typically `192.168.0.x`. You can also ping from the VM to confirm. The KRC will connect **out** to the PC, so you only need to know the PC side IP.
+<img width="1719" height="897" alt="46b5fce89f3f31bb210ea4318a30cee8" src="https://github.com/user-attachments/assets/1dde5693-70ae-462c-95a5-07ba4c10c934" />
+
 
 **Step 3 — Create a portproxy rule (run PowerShell as Administrator)**
 
