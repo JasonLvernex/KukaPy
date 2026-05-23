@@ -108,6 +108,8 @@ Two files need to go to different locations on the KRC filesystem:
 ```
 C:\KRC\ROBOTER\Config\User\Common\EthernetKRL\KUKAPY.xml
 ```
+<img width="1719" height="897" alt="6335c33dab842d1c262b6d4fb91326bb" src="https://github.com/user-attachments/assets/28b06c50-564d-4bb1-a739-baa95328b77b" />
+
 
 EKI reads this file at `EKI_INIT("KUKAPY")` time. The filename (without extension) must match the string passed to `EKI_INIT` / `EKI_OPEN` in the KRL program.
 
@@ -127,6 +129,9 @@ Open `KUKAPY.xml` and set `<IP>` to the **PC's IP address** as seen from the KRC
   <SENDFLAG>1</SENDFLAG>
 </EXTERNAL>
 ```
+<img width="1730" height="924" alt="image" src="https://github.com/user-attachments/assets/1fefc24e-b936-4443-ad8c-934f9f4521d2" />
+
+The IP 192.168.0.1 in KUKAPY.xml is not your PC's real network IP. It is a virtual listen address created by netsh portproxy, which forwards incoming connections from the KRC to Python running on 192.168.253.1 (your VMware host-only adapter).
 
 **Cold-restart the KRC** after changing the XML so EKI reloads the configuration.
 
