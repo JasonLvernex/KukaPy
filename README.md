@@ -119,19 +119,20 @@ Copy via USB stick or network share to the KRC program directory, then select an
 
 ### 2. Configure KUKAPY.xml
 
-Open `KUKAPY.xml` and set `<IP>` to the **PC's IP address** as seen from the KRC network:
+Open `KUKAPY.xml` and set `<IP>` to the PC's IP address reachable from the KRC, then set `<PORT>` to any free port. The other fields should stay as shown:
 
 ```xml
 <EXTERNAL>
-  <IP>192.168.0.1</IP>   <!-- PC IP reachable from KRC -->
+  <IP>YOUR_PC_IP</IP>
   <PORT>18735</PORT>
   <PROTOCOL>TCP</PROTOCOL>
   <SENDFLAG>1</SENDFLAG>
 </EXTERNAL>
 ```
+
 <img width="1730" height="924" alt="image" src="https://github.com/user-attachments/assets/1fefc24e-b936-4443-ad8c-934f9f4521d2" />
 
-The IP 192.168.0.1 in KUKAPY.xml is not your PC's real network IP. It is a virtual listen address created by netsh portproxy, which forwards incoming connections from the KRC to Python running on 192.168.253.1 (your VMware host-only adapter).
+How to find `YOUR_PC_IP` depends on your setup — see Section 4 below.
 
 **Cold-restart the KRC** after changing the XML so EKI reloads the configuration.
 
@@ -147,28 +148,64 @@ The following settings are required for correct operation — deviating from the
 
 - **`SENDFLAG=1`** causes the KRC to append `\x00` to every `EKI_SEND` frame. The Python client handles both null-byte delimited and plain XML frames automatically.
 
-### 4. Network setup for KUKA Sim Pro + VMware
+### 4. Network setup
 
-If running KRC inside a VMware VM (e.g. OfficeLite):
+#### Option A — Real KRC (physical robot)
 
-- KRC's VxWorks real-time OS only routes `192.168.0.0/24`.
-- Python runs on the Windows host, typically on a `192.168.253.x` VMware NAT interface.
-- Bridge the two with a **portproxy** rule run as Administrator on the host:
+The PC and KRC must be on the same subnet, connected via Ethernet (directly or through a switch).
+
+Run `ipconfig` on the PC and look for the adapter connected to the robot network. Use that IP in `KUKAPY.xml`:
+
+```
+Example: KRC is 192.168.1.100  →  PC adapter is 192.168.1.x  →  use that IP
+```
+
+No portproxy needed. Make sure Windows Firewall allows inbound TCP on the chosen port.
+
+#### Option B — KUKA Sim Pro + VMware (OfficeLite)
+
+The simulated KRC runs inside a VMware VM. Its VxWorks real-time OS can only route `192.168.0.0/24`. Python runs on the Windows host on a different subnet, so a bridge is required.
+
+**Step 1 — Find your VMware host-only adapter IP**
+
+Run `ipconfig` on the PC and find the `VMware Network Adapter VMnet8` entry:
+
+```
+Ethernet adapter VMware Network Adapter VMnet8:
+    IPv4 Address: 192.168.253.1       ← this is YOUR host IP (VMnet8)
+```
+
+> The exact address depends on your VMware NAT settings and may differ from `192.168.253.1`. Use whatever `VMnet8` shows on your machine.
+
+**Step 2 — Find the KRC's IP inside the VM**
+
+Inside the VM, check the KRC network config. In OfficeLite it is typically `192.168.0.x`. You can also ping from the VM to confirm. The KRC will connect **out** to the PC, so you only need to know the PC side IP.
+
+**Step 3 — Create a portproxy rule (run PowerShell as Administrator)**
+
+This forwards traffic arriving at `192.168.0.1` (a virtual address the KRC can reach) to your real host IP on VMnet8:
 
 ```powershell
 netsh portproxy add v4tov4 `
-  listenaddress=192.168.0.1 listenport=18735 `
-  connectaddress=192.168.253.1 connectport=18735
+  listenaddress=192.168.0.1  listenport=18735 `
+  connectaddress=192.168.253.1  connectport=18735
 ```
 
-Also open the port in Windows Firewall:
+Replace `192.168.253.1` with your actual VMnet8 IP from Step 1.
+
+Set `<IP>192.168.0.1</IP>` in `KUKAPY.xml` — this is the portproxy listen address, not a real network interface, so it will not appear in `ipconfig`.
+
+**Step 4 — Open the port in Windows Firewall (run as Administrator)**
 
 ```powershell
 netsh advfirewall firewall add rule `
   name="KukaPy EKI" dir=in action=allow protocol=TCP localport=18735
 ```
 
-Run `KUKAPY_SERVER.SRC` on the pendant **after** Python is listening.
+**Step 5 — Start order**
+
+1. Run Python script first (`robot.connect()` starts listening)
+2. Then start `KUKAPY_SERVER` on the pendant — KRC will connect out to the portproxy address
 
 ---
 
