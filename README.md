@@ -130,7 +130,6 @@ Open `KUKAPY.xml` and set `<IP>` to the PC's IP address reachable from the KRC, 
 </EXTERNAL>
 ```
 
-<img width="1730" height="924" alt="image" src="https://github.com/user-attachments/assets/1fefc24e-b936-4443-ad8c-934f9f4521d2" />
 
 How to find `YOUR_PC_IP` depends on your setup — see Section 4 below.
 
@@ -169,6 +168,8 @@ The simulated KRC runs inside a VMware VM. Its VxWorks real-time OS can only rou
 **Step 1 — Find your VMware host-only adapter IP**
 
 Run `ipconfig` on the PC and find the `VMware Network Adapter VMnet8` entry:
+
+<img width="1730" height="924" alt="image" src="https://github.com/user-attachments/assets/1fefc24e-b936-4443-ad8c-934f9f4521d2" />
 
 ```
 Ethernet adapter VMware Network Adapter VMnet8:
