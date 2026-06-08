@@ -62,17 +62,27 @@ kukadriver/       Files to deploy on the KRC
   KUKAPY.xml          EKI channel configuration
 
 kuka_example/
-  test_ping.py        Minimal ping/pong connectivity test
-  connection_test.py  Motion test — joint moves + Cartesian LIN move
+  test_ping.py            Minimal ping/pong connectivity test
+  connection_test.py      Motion test — joint moves + Cartesian LIN move
+  dh_calibration.py       DH parameter calibration — collect data and/or fit FK model
+  fk_ik_test.py           Forward / inverse kinematics tests (offline + online)
+  calibration_data.json   Example 9-pose calibration dataset
+  kuka_dh_params.npy      Example calibrated DH parameters (output of dh_calibration.py)
 ```
 
 ---
 
 ## Requirements
 
-- Python 3.8+ (no third-party dependencies — standard library only)
+**Core (robot communication):**
+- Python 3.8+
 - KUKA KRC with KSS 8.x and EthernetKRL (EKI) option
 - Network connectivity between PC and KRC
+
+**FK / IK calibration (optional):**
+```bash
+pip install scipy numpy roboticstoolbox-python spatialmath-python
+```
 
 ---
 
@@ -281,6 +291,75 @@ python kuka_example/test_ping.py
 # 3. Run the motion test (joint moves + Cartesian LIN)
 python kuka_example/connection_test.py
 ```
+
+---
+
+## FK / IK Calibration
+
+KukaPy includes a calibration pipeline that fits standard Denavit-Hartenberg (DH) parameters to your specific robot by comparing Python FK output against the controller's reported TCP positions.
+
+### Why calibrate?
+
+KUKA's nominal kinematics differ between robot models, and published DH parameters are approximate. Calibration measures the actual link geometry from real pose data, typically achieving < 5 mm position accuracy. This enables:
+
+- **Forward kinematics (FK):** compute TCP pose from joint angles in Python
+- **Inverse kinematics (IK):** compute joint angles for a target Cartesian pose, then send them to the robot
+
+### 3-step workflow
+
+**Step 1 — Collect calibration data**
+
+Move the robot to 9+ diverse poses and record joint angles + TCP positions:
+
+```bash
+# Auto-move through 9 preset poses (6-DOF KUKA, safest)
+python kuka_example/dh_calibration.py --collect --auto
+
+# Or jog manually and press Enter at each pose
+python kuka_example/dh_calibration.py --collect
+```
+
+Saves `calibration_data.json`. For best accuracy: vary A1 widely (±90°), use different elbow configurations, and avoid wrist singularities (A5 ≈ 0°).
+
+**Step 2 — Fit DH parameters**
+
+```bash
+python kuka_example/dh_calibration.py
+```
+
+The optimizer:
+1. Searches all 2^(N−1) joint-direction sign combinations (KUKA's hardware rotation directions don't always match the DH right-hand-rule convention)
+2. Runs multi-start nonlinear least squares on position + orientation residuals
+3. Saves calibrated parameters to `kuka_dh_params.npy`
+
+Expected output:
+```
+Calibration done — RMS pos: 1.8 mm | RMS rot: 0.12 deg  (9 points)
+```
+
+**Step 3 — Run FK / IK**
+
+```bash
+python kuka_example/fk_ik_test.py
+```
+
+Automatically loads `kuka_dh_params.npy`. With `CONNECT_TO_ROBOT = True`, also cross-validates Python FK against the controller's live TCP reading.
+
+### CLI reference — `dh_calibration.py`
+
+| Flag | Description |
+|---|---|
+| `--collect` | Connect to robot and record new calibration data |
+| `--auto` | With `--collect`: auto-move through 9 preset poses (6-DOF only) |
+| `--joints N` | Number of robot joints (default: 6) |
+| `--port P` | EKI port (default: 18735) |
+| `--data FILE` | Input JSON path (default: `calibration_data.json`) |
+| `--out FILE` | Output `.npy` path (default: `kuka_dh_params.npy`) |
+
+### KUKA coordinate conventions
+
+- **Joint angles:** A1–A6 in degrees, as reported by `$AXIS_ACT`
+- **TCP position:** `[X, Y, Z, A, B, C]` — X/Y/Z in mm, A/B/C as ZYX extrinsic Euler angles in degrees (A around Z, B around Y, C around X), as reported by `$POS_ACT`
 
 ---
 
