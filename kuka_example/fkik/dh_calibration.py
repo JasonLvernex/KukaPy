@@ -57,17 +57,25 @@ _ROT_WEIGHT = 500.0
 _VELOCITY = 100  # %
 
 # Preset diverse poses for 6-DOF KUKA (used with --auto).
-# Covers: A1 swing ±90°, A2/A3 high/low elbow, combined wrist variation.
+# Rules:
+#   - Every joint must vary across the set — otherwise its DH params are unobservable.
+#   - A5 must span a wide range (30°–150°); keeping it fixed at 90° makes d[4]/a[4]
+#     unobservable and causes hundreds of mm error on unseen poses.
+#   - Avoid A5 ≈ 0° (wrist singularity).
+#   - Include shallow A2/A3 poses (e.g. A2=-40°) to cover the full arm workspace.
 _AUTO_POSES_6DOF = [
-    [  0, -90,  90,   0, 90,   0],  # home                (baseline)
-    [ 45, -90,  90,   0, 90,   0],  # A1 +45              (constrains d[0], a[0])
-    [-45, -90,  90,   0, 90,   0],  # A1 -45
-    [ 90, -90,  90,   0, 90,   0],  # A1 +90              (max A1 swing)
-    [-90, -90,  90,   0, 90,   0],  # A1 -90
-    [  0, -70,  70,   0, 90,   0],  # low elbow           (constrains a[1], d[3])
-    [  0, -110, 100,  0, 90,   0],  # high elbow
-    [ 45, -70,  70,  45, 90,  30],  # A1 + wrist varied   (constrains offset[3..5])
-    [-45, -70,  70, -45, 90, -30],  # symmetric wrist
+    [  0, -90,  90,   0,  90,   0],  # home                  (baseline)
+    [ 45, -90,  90,   0,  90,   0],  # A1 +45                (constrains d[0], a[0])
+    [-45, -90,  90,   0,  90,   0],  # A1 -45
+    [ 90, -90,  90,   0,  90,   0],  # A1 +90                (max A1 swing)
+    [-90, -90,  90,   0,  90,   0],  # A1 -90
+    [  0, -70,  70,   0,  60,   0],  # A5=60                 (constrains d[4], a[4])
+    [  0, -70,  70,   0, 120,   0],  # A5=120                (constrains d[4], a[4])
+    [  0,-110, 100,   0,  90,   0],  # high elbow            (constrains a[1], d[3])
+    [  0, -50,  40,   0,  90,   0],  # shallow A2/A3         (expands arm workspace)
+    [ 45, -70,  70,  45,  60,  30],  # combined, A5=60
+    [-45, -70,  70, -45, 120, -30],  # combined, A5=120
+    [ 30, -40,  30,  20,  80,  10],  # near-failure zone coverage
 ]
 
 

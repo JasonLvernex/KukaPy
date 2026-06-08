@@ -244,8 +244,19 @@ if __name__ == "__main__":
         print("\nWaiting for KRC to connect...")
         robot.connect()
 
-        # Cross-validate FK against controller
-        test_fk_vs_controller(robot, kuka)
+        # Cross-validate FK at several poses — deliberately includes
+        # poses far from calibration data to test generalization.
+        FK_TEST_POSES = [
+            [  0, -90,  90,   0,  90,   0],  # home (calibration pose — should be ~0 mm)
+            [ 45, -90,  90,   0,  90,   0],  # A1 swing
+            [  0, -70,  70,   0,  60,   0],  # A5=60  (wrist stress test)
+            [  0, -70,  70,   0, 120,   0],  # A5=120 (wrist stress test)
+            [ 30, -40,  30,  20,  80,  10],  # shallow arm + varied wrist
+            [-30, -40,  30, -20,  80, -10],  # symmetric
+        ]
+        for pose in FK_TEST_POSES:
+            robot.move("joint", pose, velocity=20)
+            test_fk_vs_controller(robot, kuka)
 
         # Optional: compute IK and actually move the robot
         # Uncomment and set a safe target for your setup before enabling:
