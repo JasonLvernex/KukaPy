@@ -16,7 +16,7 @@ import sys
 import os
 import numpy as np
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
 from kukapy.robot import Robot
 
 try:
@@ -37,7 +37,7 @@ ROBOT_PORT       = 18735
 
 # ── KUKA robot DH model ───────────────────────────────────────────────────────
 
-_NP_PARAMS = os.path.join(os.path.dirname(__file__), "kuka_dh_params.npy")
+_NP_PARAMS = os.path.join(os.path.dirname(__file__), "calibration_data", "kuka_dh_params.npy")
 
 # Joint direction signs: signs[i]=+1 means KUKA and DH agree on rotation direction.
 # signs[i]=-1 means KUKA rotates opposite to DH for joint i.

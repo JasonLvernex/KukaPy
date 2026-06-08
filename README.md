@@ -62,12 +62,19 @@ kukadriver/       Files to deploy on the KRC
   KUKAPY.xml          EKI channel configuration
 
 kuka_example/
-  test_ping.py            Minimal ping/pong connectivity test
-  connection_test.py      Motion test — joint moves + Cartesian LIN move
-  dh_calibration.py       DH parameter calibration — collect data and/or fit FK model
-  fk_ik_test.py           Forward / inverse kinematics tests (offline + online)
-  calibration_data.json   Example 9-pose calibration dataset
-  kuka_dh_params.npy      Example calibrated DH parameters (output of dh_calibration.py)
+  connection/
+    test_ping.py            Minimal ping/pong connectivity test
+    connection_test.py      Motion test — joint moves + Cartesian LIN move
+    tcp_connect_test.py     Raw TCP client test
+    tcp_listen_test.py      Raw TCP server test
+    test_ekimin.py          Minimal EKI GetInt test
+    kuka_test.mp4           Demo video
+  fkik/
+    dh_calibration.py       DH parameter calibration — collect data and/or fit FK model
+    fk_ik_test.py           Forward / inverse kinematics tests (offline + online)
+    calibration_data/
+      calibration_data.json   Example 9-pose calibration dataset
+      kuka_dh_params.npy      Example calibrated DH parameters (output of dh_calibration.py)
 ```
 
 ---
@@ -286,10 +293,10 @@ Use `recv_timeout=300` (or similar) if long motion commands risk being cut off.
 ```bash
 # 1. Start KUKAPY_SERVER on the pendant
 # 2. Run the ping test
-python kuka_example/test_ping.py
+python kuka_example/connection/test_ping.py
 
 # 3. Run the motion test (joint moves + Cartesian LIN)
-python kuka_example/connection_test.py
+python kuka_example/connection/connection_test.py
 ```
 
 ---
@@ -313,10 +320,10 @@ Move the robot to 9+ diverse poses and record joint angles + TCP positions:
 
 ```bash
 # Auto-move through 9 preset poses (6-DOF KUKA, safest)
-python kuka_example/dh_calibration.py --collect --auto
+python kuka_example/fkik/dh_calibration.py --collect --auto
 
 # Or jog manually and press Enter at each pose
-python kuka_example/dh_calibration.py --collect
+python kuka_example/fkik/dh_calibration.py --collect
 ```
 
 Saves `calibration_data.json`. For best accuracy: vary A1 widely (±90°), use different elbow configurations, and avoid wrist singularities (A5 ≈ 0°).
@@ -324,7 +331,7 @@ Saves `calibration_data.json`. For best accuracy: vary A1 widely (±90°), use d
 **Step 2 — Fit DH parameters**
 
 ```bash
-python kuka_example/dh_calibration.py
+python kuka_example/fkik/dh_calibration.py
 ```
 
 The optimizer:
@@ -340,7 +347,7 @@ Calibration done — RMS pos: 1.8 mm | RMS rot: 0.12 deg  (9 points)
 **Step 3 — Run FK / IK**
 
 ```bash
-python kuka_example/fk_ik_test.py
+python kuka_example/fkik/fk_ik_test.py
 ```
 
 Automatically loads `kuka_dh_params.npy`. With `CONNECT_TO_ROBOT = True`, also cross-validates Python FK against the controller's live TCP reading.

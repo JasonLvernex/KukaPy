@@ -40,7 +40,7 @@ import numpy as np
 from scipy.optimize import least_squares
 from scipy.spatial.transform import Rotation as _Rot
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
 from kukapy.robot import Robot
 
 
@@ -429,9 +429,11 @@ if __name__ == "__main__":
     args = _parse_args()
     n = args.joints
 
-    _dir     = os.path.dirname(__file__)
-    data_file = args.data or os.path.join(_dir, "calibration_data.json")
-    npy_file  = args.out  or os.path.join(_dir, "kuka_dh_params.npy")
+    _dir      = os.path.dirname(__file__)
+    _cal_dir  = os.path.join(_dir, "calibration_data")
+    os.makedirs(_cal_dir, exist_ok=True)
+    data_file = args.data or os.path.join(_cal_dir, "calibration_data.json")
+    npy_file  = args.out  or os.path.join(_cal_dir, "kuka_dh_params.npy")
 
     alpha    = _alpha_default(n)
     home_deg = _home_deg_default(n)
