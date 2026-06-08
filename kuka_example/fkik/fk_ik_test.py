@@ -253,9 +253,10 @@ if __name__ == "__main__":
             [  0, -70,  70,   0, 120,   0],  # A5=120 (wrist stress test)
             [ 30, -40,  30,  20,  80,  10],  # shallow arm + varied wrist
             [-30, -40,  30, -20,  80, -10],  # symmetric
+            [  0, -90,  90,   0,  90,   0],  # home
         ]
         for pose in FK_TEST_POSES:
-            robot.move("joint", pose, velocity=20)
+            robot.move("joint", pose, velocity=100)
             test_fk_vs_controller(robot, kuka)
 
         # Optional: compute IK and actually move the robot
